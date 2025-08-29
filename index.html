@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NardPrompts</title>
+    <!-- Incluir Tailwind CSS desde CDN para un estilo moderno y responsivo -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        /* Base */
+        :root {
+            --neon: #00ff88;
+            --neon-2: #39ffbd;
+            --ink: #0a0a0a;
+            --soft-ink: #151515;
+            --paper: #ffffff;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: radial-gradient(1000px 600px at 10% 10%, rgba(57,255,189,0.18), transparent 60%),
+                        radial-gradient(800px 500px at 90% 20%, rgba(0,255,136,0.15), transparent 60%),
+                        linear-gradient(180deg, #0b0f0e 0%, #050505 100%);
+            color: #e6ffe6;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        /* iPhone-like frame */
+        .device-shell {
+            position: relative;
+            border-radius: 2rem;
+            border: 1px solid rgba(255,255,255,0.08);
+            background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+            box-shadow: 0 10px 40px rgba(0,0,0,0.4), inset 0 0 0 1px rgba(255,255,255,0.06);
+            overflow: hidden;
+            backdrop-filter: blur(8px);
+        }
+        .notch {
+            position: absolute;
+            top: 0.75rem;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 160px;
+            height: 24px;
+            background: #0d0f10;
+            border-radius: 14px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.35);
+        }
+        /* Cards (glassmorphism) */
+        .card {
+            background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04));
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 1.25rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+            padding: 2rem;
+            transition: transform .35s ease, box-shadow .35s ease, border-color .35s ease;
+        }
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 16px 40px rgba(0,0,0,0.5);
+            border-color: rgba(57,255,189,0.35);
+        }
+        /* Buttons */
+        .btn-primary {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: .5rem;
+            color: #001b10;
+            font-weight: 700;
+            padding: .8rem 1.5rem;
+            border-radius: 999px;
+            background: linear-gradient(135deg, var(--neon) 0%, var(--neon-2) 100%);
+            box-shadow: 0 0 0 2px rgba(0,0,0,0.4), 0 8px 30px rgba(0,255,136,0.25);
+            transition: transform .2s ease, box-shadow .2s ease, filter .2s ease;
+        }
+        .btn-primary:hover { transform: translateY(-2px) scale(1.01); filter: brightness(1.05); }
+        .btn-primary:disabled { opacity: .7; cursor: not-allowed; }
+        .btn-secondary {
+            display: inline-flex; align-items:center; justify-content:center;
+            color: #e8fdf3; font-weight:600; padding:.75rem 1.25rem; border-radius:999px;
+            background: linear-gradient(135deg, #1a1f1e 0%, #0f1312 100%);
+            border: 1px solid rgba(255,255,255,0.08);
+            transition: background .25s ease, transform .25s ease;
+        }
+        .btn-secondary:hover { transform: translateY(-2px); background: linear-gradient(135deg, #222826, #121615); }
+        /* Inputs */
+        .textarea {
+            width: 100%;
+            padding: 1rem;
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: .9rem;
+            background: rgba(5,8,8,0.55);
+            color: #eafff5;
+            outline: none;
+            transition: border-color .25s ease, box-shadow .25s ease, background .25s ease;
+        }
+        .textarea::placeholder { color: rgba(230,255,246,0.5); }
+        .textarea:focus {
+            border-color: rgba(57,255,189,0.6);
+            box-shadow: 0 0 0 4px rgba(57,255,189,0.15);
+            background: rgba(8,12,12,0.7);
+        }
+        /* Spinners */
+        .loading-spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 4px solid #fff;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        /* Reveal on scroll */
+        .reveal { opacity: 0; transform: translateY(12px); transition: opacity .6s ease, transform .6s ease; }
+        .reveal.visible { opacity: 1; transform: translateY(0); }
+        /* Header gradient + nav underline */
+        .header-gradient {
+            background: linear-gradient(135deg, rgba(0,255,136,0.25), rgba(57,255,189,0.20) 30%, rgba(0,0,0,0.55) 70%),
+                        linear-gradient(180deg, #0b0f0e, #050606);
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+        .nav-link { position: relative; }
+        .nav-link::after {
+            content: ""; position: absolute; left: 0; bottom: -4px; width: 0; height: 2px;
+            background: linear-gradient(90deg, var(--neon), var(--neon-2)); transition: width .25s ease;
+        }
+        .nav-link:hover::after { width: 100%; }
+        /* Typing effect caret */
+        .typing-caret { border-right: 2px solid var(--neon); white-space: nowrap; overflow: hidden; }
+        /* Modal */
+        .modal-overlay { position: fixed; inset: 0; display: none; place-items: center; background: rgba(0,0,0,0.6); backdrop-filter: blur(6px); z-index: 50; }
+        .modal-overlay.show { display: grid; animation: fadeIn .25s ease; }
+        @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
+        .modal-card {
+            width: min(92vw, 520px);
+            border-radius: 1.2rem;
+            padding: 1.25rem;
+            background: linear-gradient(180deg, rgba(255,255,255,0.09), rgba(255,255,255,0.04));
+            border: 1px solid rgba(57,255,189,0.35);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 40px rgba(0,255,136,0.15) inset;
+        }
+        .modal-title { font-weight: 800; font-size: 1.15rem; color: #dffff2; letter-spacing: .2px; }
+        .modal-glow { height: 8px; border-radius: 999px; background: linear-gradient(90deg, var(--neon), var(--neon-2)); filter: blur(.4px); animation: barMove 1.4s ease-in-out infinite; }
+        @keyframes barMove { 0% { transform: scaleX(.2) translateX(-20%)} 50%{ transform: scaleX(1) translateX(10%)} 100%{ transform: scaleX(.2) translateX(120%)} }
+        .modal-dots { display:flex; gap:8px; margin-top:.75rem; }
+        .modal-dots span { width:10px; height:10px; border-radius:999px; background: var(--neon); box-shadow: 0 0 12px rgba(0,255,136,0.75); animation: bounce 1s infinite ease-in-out; }
+        .modal-dots span:nth-child(2){ animation-delay: .15s }
+        .modal-dots span:nth-child(3){ animation-delay: .3s }
+        @keyframes bounce { 0%,80%,100%{ transform: translateY(0)} 40%{ transform: translateY(-6px)} }
+    </style>
+</head>
+<body class="text-gray-100">
+
+    <header class="header-gradient text-white py-6 shadow-lg">
+        <div class="container flex flex-col md:flex-row md:justify-between md:items-center gap-3">
+            <div>
+                <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight">NardPrompts</h1>
+                <p class="text-sm md:text-base text-emerald-200/90 mt-1 typing-caret" id="typing"></p>
+            </div>
+            <nav class="flex flex-wrap gap-4 md:gap-6">
+                <a href="#prompt-mejorado" class="nav-link hover:text-emerald-200 transition-colors">Mejorar Prompt</a>
+                <a href="#analisis-imagen" class="nav-link hover:text-emerald-200 transition-colors">Análisis de Imagen</a>
+                <a href="#plantillas" class="nav-link hover:text-emerald-200 transition-colors">Plantillas</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container py-8">
+        <div class="device-shell p-4 md:p-6">
+            <div class="notch" aria-hidden="true"></div>
+            <div class="space-y-12">
+
+        <!-- Sección 1: Mejorar Prompt -->
+        <section id="prompt-mejorado" class="card reveal">
+            <h2 class="text-2xl font-bold mb-4">Mejorar tu Idea</h2>
+            <p class="text-emerald-100/80 mb-6">Ingresa una idea simple y la IA la convertirá en un prompt estructurado y detallado para generar contenido de alta calidad.</p>
+            <div class="space-y-4">
+                <div>
+                    <label for="inputPrompt" class="block text-sm font-medium text-emerald-200 mb-1">Tu idea o prompt simple:</label>
+                    <textarea id="inputPrompt" rows="4" class="textarea" placeholder="Ejemplo: un gato en el espacio"></textarea>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button id="improveBtn" class="btn-primary flex-1">
+                        <span id="improveBtnText">Mejorar Prompt</span>
+                        <div id="improveSpinner" class="hidden loading-spinner"></div>
+                    </button>
+                    <!-- Here you could add a button for another API, e.g., DeepSeek -->
+                </div>
+                <div>
+                    <label for="outputPrompt" class="block text-sm font-medium text-emerald-200 mb-1">Prompt Mejorado:</label>
+                    <textarea id="outputPrompt" rows="10" class="textarea" readonly></textarea>
+                </div>
+            </div>
+        </section>
+
+        <!-- Sección 2: Análisis de Imagen -->
+        <section id="analisis-imagen" class="card reveal">
+            <h2 class="text-2xl font-bold mb-4">Analizar Imagen para Obtener Prompt</h2>
+            <p class="text-emerald-100/80 mb-6">Sube una imagen y la IA te proporcionará el prompt que podría haberla generado.</p>
+            <div class="space-y-4">
+                <div>
+                    <label for="imageUpload" class="block text-sm font-medium text-emerald-200 mb-1">Subir imagen:</label>
+                    <input type="file" id="imageUpload" accept="image/*" class="w-full text-emerald-100 p-2 border border-gray-300/20 rounded-lg bg-black/40">
+                </div>
+                <div>
+                    <button id="analyzeBtn" class="btn-primary w-full">
+                        <span id="analyzeBtnText">Analizar Imagen</span>
+                        <div id="analyzeSpinner" class="hidden loading-spinner"></div>
+                    </button>
+                </div>
+                <div>
+                    <label for="imagePrompt" class="block text-sm font-medium text-emerald-200 mb-1">Prompt generado:</label>
+                    <textarea id="imagePrompt" rows="10" class="textarea" readonly></textarea>
+                </div>
+            </div>
+        </section>
+
+        <!-- Sección 3: Plantillas de Prompts -->
+        <section id="plantillas" class="card reveal">
+            <h2 class="text-2xl font-bold mb-4">Plantillas de Prompts</h2>
+            <p class="text-emerald-100/80 mb-6">Explora diferentes estructuras de prompts para mejorar tus resultados. Haz clic para expandir y ver ejemplos.</p>
+            <div class="space-y-4">
+
+                <!-- Plantilla 1: Escritura Creativa -->
+                <div class="rounded-lg p-4 cursor-pointer transition-colors bg-white/5 hover:bg-white/10 border border-white/10" onclick="toggleTemplate('template-creative')">
+                    <div class="flex justify-between items-center">
+                        <span class="font-semibold text-lg">Plantilla de Escritura Creativa</span>
+                        <span class="transform transition-transform duration-300" id="icon-creative">▼</span>
+                    </div>
+                    <div id="template-creative" class="hidden mt-4 text-emerald-50/90">
+                        <p class="mb-2"><strong>Estructura:</strong> [Rol] [Meta] [Contexto] [Limitaciones] [Formato]</p>
+                        <p class="mb-2"><strong>Ejemplo:</strong></p>
+                        <p class="p-2 bg-black/40 rounded-lg border border-white/10">
+                            <strong>[Rol]</strong> Eres un guionista de ciencia ficción galardonado.
+                            <strong>[Meta]</strong> Escribe el monólogo de apertura de una película sobre un viajero del tiempo que llega a la antigua Roma.
+                            <strong>[Contexto]</strong> El monólogo debe ser pronunciado por el protagonista, un hombre desilusionado por el futuro, mientras observa la vida en el Foro Romano.
+                            <strong>[Limitaciones]</strong> El monólogo debe tener entre 100 y 150 palabras y evocar una sensación de soledad y asombro.
+                            <strong>[Formato]</strong> Formato de guion de película.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Plantilla 2: Generación de Código -->
+                <div class="rounded-lg p-4 cursor-pointer transition-colors bg-white/5 hover:bg-white/10 border border-white/10" onclick="toggleTemplate('template-code')">
+                    <div class="flex justify-between items-center">
+                        <span class="font-semibold text-lg">Plantilla de Generación de Código</span>
+                        <span class="transform transition-transform duration-300" id="icon-code">▼</span>
+                    </div>
+                    <div id="template-code" class="hidden mt-4 text-emerald-50/90">
+                        <p class="mb-2"><strong>Estructura:</strong> [Lenguaje] [Tarea] [Función/Clase] [Entradas] [Salidas] [Consideraciones]</p>
+                        <p class="mb-2"><strong>Ejemplo:</strong></p>
+                        <p class="p-2 bg-black/40 rounded-lg border border-white/10">
+                            <strong>[Lenguaje]</strong> JavaScript (ES6).
+                            <strong>[Tarea]</strong> Crea una función para validar una dirección de correo electrónico.
+                            <strong>[Función]</strong> La función debe llamarse `isValidEmail`.
+                            <strong>[Entradas]</strong> Un string que representa la dirección de correo electrónico.
+                            <strong>[Salidas]</strong> Retorna `true` si el formato es válido, de lo contrario `false`.
+                            <strong>[Consideraciones]</strong> Utiliza una expresión regular para la validación.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Plantilla 3: Resumen o Análisis -->
+                <div class="rounded-lg p-4 cursor-pointer transition-colors bg-white/5 hover:bg-white/10 border border-white/10" onclick="toggleTemplate('template-summary')">
+                    <div class="flex justify-between items-center">
+                        <span class="font-semibold text-lg">Plantilla de Resumen y Análisis</span>
+                        <span class="transform transition-transform duration-300" id="icon-summary">▼</span>
+                    </div>
+                    <div id="template-summary" class="hidden mt-4 text-emerald-50/90">
+                        <p class="mb-2"><strong>Estructura:</strong> [Rol] [Tarea] [Documento/Texto] [Longitud] [Puntos Clave]</p>
+                        <p class="mb-2"><strong>Ejemplo:</strong></p>
+                        <p class="p-2 bg-black/40 rounded-lg border border-white/10">
+                            <strong>[Rol]</strong> Eres un analista de negocios.
+                            <strong>[Tarea]</strong> Resume la siguiente transcripción de una reunión.
+                            <strong>[Documento]</strong> [Insertar la transcripción aquí]
+                            <strong>[Longitud]</strong> El resumen debe ser de aproximadamente 200 palabras.
+                            <strong>[Puntos Clave]</strong> Incluye los puntos de acción, las decisiones tomadas y las personas responsables.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Plantilla 4: Marketing de Producto -->
+                <div class="rounded-lg p-4 cursor-pointer transition-colors bg-white/5 hover:bg-white/10 border border-white/10" onclick="toggleTemplate('template-marketing')">
+                    <div class="flex justify-between items-center">
+                        <span class="font-semibold text-lg">Plantilla de Marketing de Producto</span>
+                        <span class="transform transition-transform duration-300" id="icon-marketing">▼</span>
+                    </div>
+                    <div id="template-marketing" class="hidden mt-4 text-emerald-50/90">
+                        <p class="mb-2"><strong>Estructura:</strong> [Producto] [Público objetivo] [Propuesta de valor] [Tono] [Canal] [Llamado a la acción]</p>
+                        <p class="mb-2"><strong>Ejemplo:</strong></p>
+                        <p class="p-2 bg-black/40 rounded-lg border border-white/10">
+                            <strong>[Producto]</strong> App de finanzas personales para freelancers.
+                            <strong>[Público objetivo]</strong> Freelancers 20-35 años en LATAM.
+                            <strong>[Propuesta de valor]</strong> Automatiza facturas y recordatorios de cobro.
+                            <strong>[Tono]</strong> Cercano, claro y motivador.
+                            <strong>[Canal]</strong> Post de Instagram con carrusel.
+                            <strong>[Llamado a la acción]</strong> Descarga gratis y organiza tu mes en 10 minutos.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Plantilla 5: Análisis de Datos -->
+                <div class="rounded-lg p-4 cursor-pointer transition-colors bg-white/5 hover:bg-white/10 border border-white/10" onclick="toggleTemplate('template-data')">
+                    <div class="flex justify-between items-center">
+                        <span class="font-semibold text-lg">Plantilla de Análisis de Datos</span>
+                        <span class="transform transition-transform duration-300" id="icon-data">▼</span>
+                    </div>
+                    <div id="template-data" class="hidden mt-4 text-emerald-50/90">
+                        <p class="mb-2"><strong>Estructura:</strong> [Contexto] [Objetivo] [Datos disponibles] [Métricas] [Segmentos] [Entregables]</p>
+                        <p class="mb-2"><strong>Ejemplo:</strong></p>
+                        <p class="p-2 bg-black/40 rounded-lg border border-white/10">
+                            <strong>[Contexto]</strong> Tienda online de ropa.
+                            <strong>[Objetivo]</strong> Identificar causas de abandono de carrito.
+                            <strong>[Datos disponibles]</strong> Eventos GA4, sesiones, embudos.
+                            <strong>[Métricas]</strong> Tasa de conversión, CTR, tiempo en paso.
+                            <strong>[Segmentos]</strong> Móvil vs escritorio, nuevos vs recurrentes.
+                            <strong>[Entregables]</strong> Hallazgos y 5 acciones priorizadas.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Plantilla 6: UX Writing / Microcopy -->
+                <div class="rounded-lg p-4 cursor-pointer transition-colors bg-white/5 hover:bg-white/10 border border-white/10" onclick="toggleTemplate('template-ux')">
+                    <div class="flex justify-between items-center">
+                        <span class="font-semibold text-lg">Plantilla de UX Writing (Microcopy)</span>
+                        <span class="transform transition-transform duration-300" id="icon-ux">▼</span>
+                    </div>
+                    <div id="template-ux" class="hidden mt-4 text-emerald-50/90">
+                        <p class="mb-2"><strong>Estructura:</strong> [Pantalla/flujo] [Usuario] [Tono] [Acción] [Estados vacíos/errores] [A/B]</p>
+                        <p class="mb-2"><strong>Ejemplo:</strong></p>
+                        <p class="p-2 bg-black/40 rounded-lg border border-white/10">
+                            <strong>[Pantalla/flujo]</strong> Onboarding de suscripción mensual.
+                            <strong>[Usuario]</strong> Nuevo, indeciso, sensible a precio.
+                            <strong>[Tono]</strong> Empático y directo.
+                            <strong>[Acción]</strong> Completar pago con tarjeta.
+                            <strong>[Estados vacíos/errores]</strong> Mensajes claros y con ayuda.
+                            <strong>[A/B]</strong> Variante con prueba gratis de 7 días.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Plantilla 7: Soporte al Cliente -->
+                <div class="rounded-lg p-4 cursor-pointer transition-colors bg-white/5 hover:bg-white/10 border border-white/10" onclick="toggleTemplate('template-soporte')">
+                    <div class="flex justify-between items-center">
+                        <span class="font-semibold text-lg">Plantilla de Soporte al Cliente</span>
+                        <span class="transform transition-transform duration-300" id="icon-soporte">▼</span>
+                    </div>
+                    <div id="template-soporte" class="hidden mt-4 text-emerald-50/90">
+                        <p class="mb-2"><strong>Estructura:</strong> [Contexto del problema] [Prioridad] [Historial] [Tono] [Solución paso a paso] [Cierre/seguimiento]</p>
+                        <p class="mb-2"><strong>Ejemplo:</strong></p>
+                        <p class="p-2 bg-black/40 rounded-lg border border-white/10">
+                            <strong>[Contexto del problema]</strong> Usuario no puede iniciar sesión tras resetear contraseña.<br>
+                            <strong>[Prioridad]</strong> Alta (bloquea uso).<br>
+                            <strong>[Historial]</strong> Cambió contraseña hoy, recibe error 401.<br>
+                            <strong>[Tono]</strong> Empático y resolutivo.<br>
+                            <strong>[Solución paso a paso]</strong> Verificar correo, limpiar caché, restablecer token, probar login en modo incógnito.<br>
+                            <strong>[Cierre/seguimiento]</strong> Confirmar acceso y ofrecer guía de seguridad.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Plantilla 8: Ventas B2B -->
+                <div class="rounded-lg p-4 cursor-pointer transition-colors bg-white/5 hover:bg-white/10 border border-white/10" onclick="toggleTemplate('template-b2b')">
+                    <div class="flex justify-between items-center">
+                        <span class="font-semibold text-lg">Plantilla de Ventas B2B (Outbound)</span>
+                        <span class="transform transition-transform duration-300" id="icon-b2b">▼</span>
+                    </div>
+                    <div id="template-b2b" class="hidden mt-4 text-emerald-50/90">
+                        <p class="mb-2"><strong>Estructura:</strong> [ICP] [Dolor del cliente] [Prueba social] [Propuesta de valor] [CTA breve] [Follow-up]</p>
+                        <p class="mb-2"><strong>Ejemplo:</strong></p>
+                        <p class="p-2 bg-black/40 rounded-lg border border-white/10">
+                            <strong>[ICP]</strong> CTOs en SaaS serie A-B.<br>
+                            <strong>[Dolor]</strong> Costos altos de infraestructura en horas pico.<br>
+                            <strong>[Prueba social]</strong> Caso con ACME redujo 32% el gasto.<br>
+                            <strong>[Propuesta]</strong> Autoscaling guiado por ML sin tocar código.<br>
+                            <strong>[CTA]</strong> ¿15 min esta semana para ver si aplica?<br>
+                            <strong>[Follow-up]</strong> Recontacto en 3 días con material técnico.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Plantilla 9: Plan de Lección (Educación) -->
+                <div class="rounded-lg p-4 cursor-pointer transition-colors bg-white/5 hover:bg-white/10 border border-white/10" onclick="toggleTemplate('template-lesson')">
+                    <div class="flex justify-between items-center">
+                        <span class="font-semibold text-lg">Plantilla de Plan de Lección</span>
+                        <span class="transform transition-transform duration-300" id="icon-lesson">▼</span>
+                    </div>
+                    <div id="template-lesson" class="hidden mt-4 text-emerald-50/90">
+                        <p class="mb-2"><strong>Estructura:</strong> [Tema] [Objetivos de aprendizaje] [Materiales] [Actividades] [Evaluación] [Tareas] [Adaptaciones]</p>
+                        <p class="mb-2"><strong>Ejemplo:</strong></p>
+                        <p class="p-2 bg-black/40 rounded-lg border border-white/10">
+                            <strong>[Tema]</strong> Introducción a fracciones (primaria).<br>
+                            <strong>[Objetivos]</strong> Identificar numerador/denominador y comparar fracciones simples.<br>
+                            <strong>[Materiales]</strong> Pizarrón, fichas, hojas.<br>
+                            <strong>[Actividades]</strong> Explicación 10’, práctica guiada 15’, juego 15’.<br>
+                            <strong>[Evaluación]</strong> 5 ejercicios rápidos.<br>
+                            <strong>[Tareas]</strong> Hoja de práctica con 10 problemas.<br>
+                            <strong>[Adaptaciones]</strong> Apoyos visuales y pares tutores.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Plantilla 10: SEO Brief -->
+                <div class="rounded-lg p-4 cursor-pointer transition-colors bg-white/5 hover:bg-white/10 border border-white/10" onclick="toggleTemplate('template-seo')">
+                    <div class="flex justify-between items-center">
+                        <span class="font-semibold text-lg">Plantilla de SEO Brief</span>
+                        <span class="transform transition-transform duration-300" id="icon-seo">▼</span>
+                    </div>
+                    <div id="template-seo" class="hidden mt-4 text-emerald-50/90">
+                        <p class="mb-2"><strong>Estructura:</strong> [Keyword principal] [Intención] [Secundarias] [Competidores] [Estructura H1-H3] [FAQ] [Requisitos on-page]</p>
+                        <p class="mb-2"><strong>Ejemplo:</strong></p>
+                        <p class="p-2 bg-black/40 rounded-lg border border-white/10">
+                            <strong>[Keyword]</strong> “mejor silla ergonómica 2025”.<br>
+                            <strong>[Intención]</strong> Comercial investigativa.<br>
+                            <strong>[Secundarias]</strong> lumbar, materiales, comparación.<br>
+                            <strong>[Competidores]</strong> 3 mejores URLs y sus H2.<br>
+                            <strong>[Estructura]</strong> H1, H2 de criterios, H2 comparativas, H2 veredicto.<br>
+                            <strong>[FAQ]</strong> 5 preguntas con respuestas concisas.<br>
+                            <strong>[On-page]</strong> Title, meta, schema Product/FAQ.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Plantilla 11: Guion de Video (Short/YouTube) -->
+                <div class="rounded-lg p-4 cursor-pointer transition-colors bg-white/5 hover:bg-white/10 border border-white/10" onclick="toggleTemplate('template-video')">
+                    <div class="flex justify-between items-center">
+                        <span class="font-semibold text-lg">Plantilla de Guion de Video</span>
+                        <span class="transform transition-transform duration-300" id="icon-video">▼</span>
+                    </div>
+                    <div id="template-video" class="hidden mt-4 text-emerald-50/90">
+                        <p class="mb-2"><strong>Estructura:</strong> [Hook 3-5s] [Contexto] [Puntos clave] [CTA] [Notas visuales/sonido] [Capítulos]</p>
+                        <p class="mb-2"><strong>Ejemplo:</strong></p>
+                        <p class="p-2 bg-black/40 rounded-lg border border-white/10">
+                            <strong>[Hook]</strong> “3 trucos para editar más rápido”.<br>
+                            <strong>[Contexto]</strong> Tutorial para principiantes en Premiere.<br>
+                            <strong>[Puntos clave]</strong> Atajos, presets, proxys.<br>
+                            <strong>[CTA]</strong> Suscríbete para más tips.<br>
+                            <strong>[Notas visuales]</strong> Texto on-screen y SFX sutiles.<br>
+                            <strong>[Capítulos]</strong> 00:00, 00:30, 01:10, 02:00.
+                        </p>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+            </div>
+        </div>
+    </main>
+
+    <footer class="bg-black/60 backdrop-blur border-t border-white/10 text-white p-6 mt-12 text-center">
+        <p>&copy; 2025 NardPrompts. Creado con ❤️ para inspirar la creatividad.</p>
+    </footer>
+
+    <!-- Modal de Carga -->
+    <div id="loadingModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="loadingTitle">
+        <div class="modal-card">
+            <div class="flex items-center justify-between mb-2">
+                <h3 id="loadingTitle" class="modal-title">Procesando…</h3>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" class="opacity-80">
+                    <circle cx="12" cy="12" r="9" stroke="rgba(255,255,255,.5)" stroke-width="2"></circle>
+                    <path d="M12 3a9 9 0 0 1 9 9" stroke="url(#g)" stroke-width="3" stroke-linecap="round"></path>
+                    <defs>
+                        <linearGradient id="g" x1="0" y1="0" x2="24" y2="24">
+                            <stop stop-color="var(--neon)"/>
+                            <stop offset="1" stop-color="var(--neon-2)"/>
+                        </linearGradient>
+                    </defs>
+                </svg>
+            </div>
+            <div id="loadingText" class="text-emerald-100/90 mb-3">Analizando prompt…</div>
+            <div class="modal-glow"></div>
+            <div class="modal-dots"><span></span><span></span><span></span></div>
+        </div>
+    </div>
+
+    <script>
+        // Use an empty string for the API key in the code. The environment will handle providing it.
+        const API_KEY_GEMINI = "AIzaSyBgriGokmzGfksJ1bg5n4PsQQLndT1t4n8";
+        const API_KEY_DEEPSEEK = "sk-603a0e7bb6b34bf8ba72543aa1035d4d";
+        const API_KEY_MOONSHOT = "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";
+
+        const API_URL_GEMINI = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${API_KEY_GEMINI}`;
+        const API_URL_DEEPSEEK = "https://api.deepseek.com/v1/chat/completions";
+        const API_URL_MOONSHOT = "https://api.moonshot.ai/v1/chat/completions";
+
+        // Get DOM elements
+        const inputPromptEl = document.getElementById('inputPrompt');
+        const outputPromptEl = document.getElementById('outputPrompt');
+        const improveBtn = document.getElementById('improveBtn');
+        const improveBtnText = document.getElementById('improveBtnText');
+        const improveSpinner = document.getElementById('improveSpinner');
+        
+        const imageUpload = document.getElementById('imageUpload');
+        const imagePromptEl = document.getElementById('imagePrompt');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const analyzeBtnText = document.getElementById('analyzeBtnText');
+        const analyzeSpinner = document.getElementById('analyzeSpinner');
+        
+        const templates = {
+            'template-creative': document.getElementById('template-creative'),
+            'template-code': document.getElementById('template-code'),
+            'template-summary': document.getElementById('template-summary')
+        };
+        const icons = {
+            'icon-creative': document.getElementById('icon-creative'),
+            'icon-code': document.getElementById('icon-code'),
+            'icon-summary': document.getElementById('icon-summary')
+        };
+
+        // Function to toggle a template's visibility
+        function toggleTemplate(templateId) {
+            const templateEl = templates[templateId];
+            const iconEl = icons[`icon-${templateId.split('-')[1]}`];
+            if (templateEl && iconEl) {
+                templateEl.classList.toggle('hidden');
+                iconEl.classList.toggle('rotate-180');
+            }
+        }
+
+        // Helpers modal
+        const modal = document.getElementById('loadingModal');
+        const loadingText = document.getElementById('loadingText');
+        function openModal(message){ if (loadingText) loadingText.textContent = message || 'Procesando…'; modal?.classList.add('show'); }
+        function closeModal(){ modal?.classList.remove('show'); }
+
+        // --- Prompt Improvement Functionality ---
+        improveBtn.addEventListener('click', async () => {
+            const userIdea = inputPromptEl.value.trim();
+            if (!userIdea) {
+                outputPromptEl.value = 'Por favor, ingresa una idea o prompt simple para mejorar.';
+                return;
+            }
+
+            // Show loading state + modal
+            improveBtnText.classList.add('hidden');
+            improveSpinner.classList.remove('hidden');
+            improveBtn.disabled = true;
+            openModal('Analizando idea… mejorando prompt…');
+
+            const systemPrompt = `Eres un experto en ingeniería de prompts. Tu tarea es tomar una idea simple y convertirla en un prompt detallado, estructurado y de alta calidad para ser utilizado por modelos de lenguaje o generadores de imágenes/video. El prompt debe ser claro, específico y contener toda la información necesaria para que la IA genere el resultado deseado. Sigue este formato: [Contexto] [Rol] [Meta] [Instrucciones] [Limitaciones] [Formato].`;
+            const userQuery = `Mejora y estructura la siguiente idea en un prompt detallado: "${userIdea}"`;
+
+            try {
+                const payload = {
+                    contents: [{ parts: [{ text: userQuery }] }],
+                    tools: [{ "google_search": {} }],
+                    systemInstruction: {
+                        parts: [{ text: systemPrompt }]
+                    },
+                };
+                
+                const response = await fetch(API_URL_GEMINI, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('API Error:', response.status, errorText);
+                    if (response.status === 401) {
+                         outputPromptEl.value = `Error de autenticación: La clave de API es inválida o no está configurada. Por favor, asegúrate de que la clave de API sea válida.`;
+                    } else {
+                         outputPromptEl.value = `Hubo un error (${response.status}) al procesar tu solicitud. Por favor, revisa la consola para más detalles.`;
+                    }
+                    return;
+                }
+
+                const result = await response.json();
+                const text = result?.candidates?.[0]?.content?.parts?.[0]?.text || "No se pudo generar el prompt. Intenta de nuevo.";
+                outputPromptEl.value = text;
+            } catch (error) {
+                console.error('Error al mejorar el prompt:', error);
+                outputPromptEl.value = 'Hubo un error al procesar tu solicitud. Por favor, verifica tu conexión o intenta más tarde.';
+            } finally {
+                // Hide loading state
+                improveBtnText.classList.remove('hidden');
+                improveSpinner.classList.add('hidden');
+                improveBtn.disabled = false;
+                closeModal();
+            }
+        });
+
+        // --- Image Analysis Functionality ---
+        analyzeBtn.addEventListener('click', async () => {
+            const file = imageUpload.files[0];
+            if (!file) {
+                imagePromptEl.value = 'Por favor, sube una imagen para analizar.';
+                return;
+            }
+
+            // Show loading state + modal
+            analyzeBtnText.classList.add('hidden');
+            analyzeSpinner.classList.remove('hidden');
+            analyzeBtn.disabled = true;
+            openModal('Analizando imagen… generando prompt…');
+
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                const base64Data = e.target.result.split(',')[1];
+                const mimeType = file.type;
+
+                const userPrompt = "Analiza esta imagen y genera un prompt creativo y detallado que podría haber sido utilizado para generarla. Describe el estilo artístico, los colores, la iluminación, la composición, los sujetos y los detalles clave. El prompt debe ser conciso y directo, optimizado para una IA generativa de imágenes.";
+                const payload = {
+                    contents: [{
+                        role: "user",
+                        parts: [
+                            { text: userPrompt },
+                            {
+                                inlineData: {
+                                    mimeType: mimeType,
+                                    data: base64Data
+                                }
+                            }
+                        ]
+                    }],
+                };
+
+                try {
+                    const response = await fetch(API_URL_GEMINI, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        console.error('API Error:', response.status, errorText);
+                        if (response.status === 401) {
+                             imagePromptEl.value = `Error de autenticación: La clave de API es inválida o no está configurada. Por favor, asegúrate de que la clave de API sea válida.`;
+                        } else {
+                             imagePromptEl.value = `Hubo un error (${response.status}) al analizar la imagen. Por favor, revisa la consola para más detalles.`;
+                        }
+                        return;
+                    }
+
+                    const result = await response.json();
+                    const text = result?.candidates?.[0]?.content?.parts?.[0]?.text || "No se pudo generar el prompt de la imagen. Intenta con otra imagen.";
+                    imagePromptEl.value = text;
+                } catch (error) {
+                    console.error('Error al analizar la imagen:', error);
+                    imagePromptEl.value = 'Hubo un error al analizar la imagen. Por favor, verifica que sea un formato válido.';
+                } finally {
+                    // Hide loading state
+                    analyzeBtnText.classList.remove('hidden');
+                    analyzeSpinner.classList.add('hidden');
+                    analyzeBtn.disabled = false;
+                    closeModal();
+                }
+            };
+            reader.onerror = () => {
+                imagePromptEl.value = 'Error al leer el archivo. Intenta de nuevo.';
+                analyzeBtnText.classList.remove('hidden');
+                analyzeSpinner.classList.add('hidden');
+                analyzeBtn.disabled = false;
+                closeModal();
+            };
+            reader.readAsDataURL(file);
+        });
+
+        // Function to handle template toggling (already present, no changes needed)
+        function toggleTemplate(templateId) {
+            const templateEl = document.getElementById(templateId);
+            const iconId = 'icon-' + templateId.split('-')[1];
+            const iconEl = document.getElementById(iconId);
+            if (templateEl && iconEl) {
+                templateEl.classList.toggle('hidden');
+                iconEl.classList.toggle('rotate-180');
+            }
+        }
+
+        // Typing effect for subtitle (non-intrusive)
+        const typingTarget = document.getElementById('typing');
+        const typingPhrases = [
+            'Convierte ideas en prompts brillantes',
+            'Mejora, analiza y crea con IA',
+            'Diseño tipo iPhone • Estilo neon'
+        ];
+        let tpIndex = 0, chIndex = 0, deleting = false;
+        function typeLoop() {
+            if (!typingTarget) return;
+            const current = typingPhrases[tpIndex % typingPhrases.length];
+            if (!deleting) {
+                typingTarget.textContent = current.slice(0, ++chIndex);
+                if (chIndex === current.length) { deleting = true; setTimeout(typeLoop, 1200); return; }
+            } else {
+                typingTarget.textContent = current.slice(0, --chIndex);
+                if (chIndex === 0) { deleting = false; tpIndex++; }
+            }
+            setTimeout(typeLoop, deleting ? 35 : 55);
+        }
+        typeLoop();
+
+        // Reveal on scroll for sections
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) entry.target.classList.add('visible');
+            });
+        }, { threshold: 0.15 });
+        document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+    </script>
+</body>
+</html>
